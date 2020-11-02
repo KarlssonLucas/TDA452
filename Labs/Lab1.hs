@@ -1,7 +1,7 @@
 {- Lab 1
-   Date: 
-   Authors:
-   Lab group:
+   Date: 2020-11-02 
+   Authors: Lucas Karlsson & Jakob Ristner
+   Lab group: TBA
  -}
 --------------------------------------------
 power :: Integer -> Integer -> Integer
@@ -36,12 +36,11 @@ power3 n k | k == 0    = 1
 
 -- D -------------------------
 {- 
-
-<Describe your test cases here>
-
+ -
+ - <Describe your test cases here>
+ -
  -}
 
--- 
 prop_powers = undefined
 
 --
