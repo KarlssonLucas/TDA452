@@ -1,4 +1,6 @@
 module TB01 where
+
+import Data.List
 import Test.QuickCheck
 
 -- maxi x y returns the maximum of x and y
@@ -38,4 +40,20 @@ smallestfactor n | n>1 = allFactors n !! 1
 multiply :: Num a => [a] -> a
 multiply []     = 0
 multiply (x:xs) = x * multiply (xs)
+
+-- duplicates :: Eq a => [a] -> Bool
+-- duplicates list = nub list /= list
+
+boolDup :: Eq a => [a] -> Bool
+boolDup []   = False
+boolDup (x:xs) | x `elem` xs = duplicates xs
+               | otherwise = x:duplicates xs
+
+duplicates :: Eq a => [a] -> [a]
+duplicates []     = []
+duplicates (x:xs) | x `elem` xs = duplicates xs
+                  | otherwise   = (x:(duplicates xs))
+
+
+
 
