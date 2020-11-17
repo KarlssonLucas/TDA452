@@ -126,18 +126,15 @@ drawIndex _ (_, Empty) = error "Ran out of cards"
 drawIndex 0 (h1, (Add c2 h2)) = ((Add c2 h1), h2)
 drawIndex n (h1, (Add c h2)) = drawIndex (n - 1) (h1, (h2 <+ (Add c Empty)))
 
-getFirst :: (Hand, Hand, StdGen) -> Hand
-getFirst (a, b, c) = a
-
 -- Helper for recursion
-shuffleHelper :: StdGen -> (Hand, Hand) -> (Hand, Hand, StdGen)
-shuffleHelper g (hand, Empty) = (hand, Empty, g)
+shuffleHelper :: StdGen -> (Hand, Hand) -> (Hand, Hand)
+shuffleHelper g (hand, Empty) = (hand, Empty)
 shuffleHelper g (hand, deck) = shuffleHelper g1 (drawIndex (n1) (hand, deck))
     where (n1, g1) = randomR (0, size deck) g
 
 shuffleDeck :: StdGen -> Hand -> Hand
 shuffleDeck _ Empty = Empty
-shuffleDeck g hand = getFirst( shuffleHelper g (Empty, hand) )
+shuffleDeck g hand = fst( shuffleHelper g (Empty, hand) )
 
 belongsTo :: Card -> Hand -> Bool
 c `belongsTo` Empty                   = False
