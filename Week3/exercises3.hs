@@ -46,4 +46,10 @@ sieve :: [Int] -> [Int]
 sieve (n:ns) = n : sieve (crossOut n ns)  
 sieve []     = [] 
 
+-- END --
+-- 5 --
+primes = sieve [2..100]
+isPrime :: Int -> Bool
+isPrime n = n `elem` primes
+
 
