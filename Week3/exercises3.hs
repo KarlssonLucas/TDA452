@@ -44,7 +44,7 @@ crossOut m ns = [n | n <- ns, n `mod` m /= 0]
 
 sieve :: [Int] -> [Int]
 sieve (n:ns) = n : sieve (crossOut n ns)  
-sieve []     = [] 
+:sieve []     = [] 
 
 -- END --
 -- 5 --

@@ -1,6 +1,7 @@
 module Sudoku where
 
 import Test.QuickCheck
+import Data.Char
 
 ------------------------------------------------------------------------------
 
@@ -36,21 +37,39 @@ example =
 
 -- | allBlankSudoku is a sudoku with just blanks
 allBlankSudoku :: Sudoku
-allBlankSudoku = undefined
+allBlankSudoku = Sudoku [[Nothing | _ <- [1..9] ] | _ <- [1..9]]
 
 -- * A2
 
 -- | isSudoku sud checks if sud is really a valid representation of a sudoku
 -- puzzle
+
 isSudoku :: Sudoku -> Bool
-isSudoku = undefined
+isSudoku (Sudoku rows) = (length rows) == 9 && allCellsValid (Sudoku rows)
+
+allCellsValid :: Sudoku -> Bool
+allCellsValid (Sudoku [])     = True 
+allCellsValid (Sudoku (x:xs)) = isValidRow x && allCellsValid (Sudoku xs) && length x == 9
+
+isValidRow :: Row -> Bool
+isValidRow []     = True
+isValidRow (x:xs) = (validCell x) && isValidRow xs
+
+validCell :: Cell -> Bool
+validCell Nothing = True
+validCell (Just n)  = n >= 1 && n <= 9
 
 -- * A3
 
 -- | isFilled sud checks if sud is completely filled in,
 -- i.e. there are no blanks
 isFilled :: Sudoku -> Bool
-isFilled = undefined
+isFilled (Sudoku rows) = rowIsFilled (Sudoku rows)
+
+rowIsFilled :: Sudoku -> Bool
+rowIsFilled (Sudoku [])   = True
+rowIsFilled (Sudoku (x:xs)) = not (Nothing `elem` x) && rowIsFilled (Sudoku xs)
+
 
 ------------------------------------------------------------------------------
 
@@ -59,14 +78,35 @@ isFilled = undefined
 -- | printSudoku sud prints a nice representation of the sudoku sud on
 -- the screen
 printSudoku :: Sudoku -> IO ()
-printSudoku = undefined
+printSudoku sudoku = do
+        putStr $ sudokuToString sudoku ""
+
+sudokuToString :: Sudoku -> String -> String 
+sudokuToString (Sudoku []) str = str
+sudokuToString (Sudoku (x:xs)) str = rowToString x "" ++ sudokuToString (Sudoku xs) str
+
+rowToString :: Row -> String -> String
+rowToString [] str = str ++ "\n"
+rowToString (Nothing : xs) str = rowToString xs (". " ++ str)
+rowToString ((Just n) : xs) str = rowToString xs ((show n) ++ " " ++ str)
 
 -- * B2
 
 -- | readSudoku file reads from the file, and either delivers it, or stops
 -- if the file did not contain a sudoku
 readSudoku :: FilePath -> IO Sudoku
-readSudoku = undefined
+readSudoku path = do 
+                s <- readFile path
+                return (Sudoku (stringToSudoku [[] |_ <- [1..9] ] s))
+
+stringToSudoku :: [Row] -> String -> [Row]
+stringToSudoku rows "" = rows
+stringToSudoku (r:rs) (c:cs) 
+        | c == '\n' = r:(stringToSudoku rs cs)
+        | c == '.'  = stringToSudoku ((r ++ [Nothing]):rs) cs
+        | otherwise = stringToSudoku ((r ++ [(Just (digitToInt c))]):rs) cs
+
+
 
 ------------------------------------------------------------------------------
 
