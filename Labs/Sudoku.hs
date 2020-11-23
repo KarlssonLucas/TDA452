@@ -111,8 +111,10 @@ stringToSudoku (r:rs) (c:cs)
 ------------------------------------------------------------------------------
 
 -- * C1
-
 -- | cell generates an arbitrary cell in a Sudoku
+
+-- Just (1,2,3,4,5,6,7,8,9), Nothing
+
 cell :: Gen (Cell)
 cell = undefined
 
