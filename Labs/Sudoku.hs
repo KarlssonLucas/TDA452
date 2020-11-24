@@ -87,8 +87,8 @@ sudokuToString (Sudoku (x:xs)) str = rowToString x "" ++ sudokuToString (Sudoku 
 
 rowToString :: Row -> String -> String
 rowToString [] str = str ++ "\n"
-rowToString (Nothing : xs) str = rowToString xs (". " ++ str)
-rowToString ((Just n) : xs) str = rowToString xs ((show n) ++ " " ++ str)
+rowToString (Nothing : xs) str = rowToString xs (str ++ " .")
+rowToString ((Just n) : xs) str = rowToString xs (str ++ " " ++ (show n))
 
 -- * B2
 
@@ -111,26 +111,32 @@ stringToSudoku (r:rs) (c:cs)
 ------------------------------------------------------------------------------
 
 -- * C1
+
 -- | cell generates an arbitrary cell in a Sudoku
-
--- Just (1,2,3,4,5,6,7,8,9), Nothing
-
 cell :: Gen (Cell)
-cell = undefined
+cell = frequency [(9, genNothing), (1, rJustInt)]
+
+rJustInt :: Gen (Maybe Int)
+rJustInt = elements [Just n | n <- [1..9]]
+
+genNothing :: Gen (Maybe Int)
+genNothing = elements [Nothing]
 
 
 -- * C2
 
 -- | an instance for generating Arbitrary Sudokus
 instance Arbitrary Sudoku where
-  arbitrary = undefined
+  arbitrary = do 
+                 rows <- vectorOf 9 $ vectorOf 9 cell
+                 return (Sudoku rows)
 
  -- hint: get to know the QuickCheck function vectorOf
  
 -- * C3
 
 prop_Sudoku :: Sudoku -> Bool
-prop_Sudoku = undefined
+prop_Sudoku sudoku = isSudoku sudoku
   -- hint: this definition is simple!
   
 ------------------------------------------------------------------------------
@@ -140,22 +146,44 @@ type Block = [Cell] -- a Row is also a Cell
 
 -- * D1
 
+checkOcc :: Block -> Bool
+checkOcc [] = True
+checkOcc (b:bs) 
+    | b == Nothing = checkOcc bs 
+    | otherwise = not (b `elem` bs ) && checkOcc bs
+
 isOkayBlock :: Block -> Bool
-isOkayBlock = undefined
+isOkayBlock block = isValidRow block && checkOcc block
 
 
 -- * D2
 
+block :: Sudoku -> Int -> Int -> Block
+block (Sudoku rows) y x = [rows !! k !! n | n <- [x..x+2], k <- [y..y+2]]
+
 blocks :: Sudoku -> [Block]
-blocks = undefined
+blocks sudoku = [block sudoku (3*y) (3*x) | y <- [0..2], x <- [0..2]]
 
 prop_blocks_lengths :: Sudoku -> Bool
 prop_blocks_lengths = undefined
 
 -- * D3
 
+checkOccRows :: [Row] -> Bool
+checkOccRows [] = True
+checkOccRows (r:rs) = checkOcc r && checkOccRows rs
+
+getCol :: [Row] -> Int -> Row
+getCol rows x = [n !! x | n <- rows]
+
+allCols :: Sudoku -> [Row]
+allCols (Sudoku rows) = [getCol rows x | x <- [0..8]]
+
 isOkay :: Sudoku -> Bool
-isOkay = undefined
+isOkay (Sudoku rows) = (checkOccRows $ allCols (Sudoku rows) ) 
+                   &&  (checkOccRows $ blocks  (Sudoku rows))
+                   &&  (checkOccRows rows)
+
 
 
 ---- Part A ends here --------------------------------------------------------
@@ -170,25 +198,28 @@ type Pos = (Int,Int)
 -- * E1
 
 blanks :: Sudoku -> [Pos]
-blanks = undefined
+blanks (Sudoku rows) = [ (n, k) | n <- [0..8], k <- [0..8], rows !! n !! k == Nothing ]
 
---prop_blanks_allBlanks :: ...
---prop_blanks_allBlanks =
+prop_blanks_allBlanks :: Bool
+prop_blanks_allBlanks = length (blanks allBlankSudoku) == 81
 
 
 -- * E2
-
 (!!=) :: [a] -> (Int,a) -> [a]
-xs !!= (i,y) = undefined
+xs !!= (i,y) = (take (i) xs) ++ [y] ++ (drop (i+1) xs) 
 
---prop_bangBangEquals_correct :: ...
---prop_bangBangEquals_correct =
+--prop_bangBangEquals_correct :: [a] -> (Int, a) -> Bool
+--prop_bangBangEquals_correct xs (i,y) = (xs !!= (i,y)) ==   ((take (i) xs) ++ [y] ++ (drop (i+1) xs))
 
 
 -- * E3
 
-update :: Sudoku -> Pos -> Cell -> Sudoku
-update = undefined
+extractRow :: Sudoku -> Int -> Row
+extractRow (Sudoku (r:rs)) 0 = r
+extractRow (Sudoku (r:rs)) i = extractRow (Sudoku rs) (i-1)  
+
+update :: Sudoku -> Pos -> Cell -> Sudoku 
+update (Sudoku rows) (i,k) y = Sudoku ((take (i) rows) ++ [(extractRow (Sudoku rows) i) !!= (k,y)] ++ (drop (i+1) rows))
 
 --prop_update_updated :: ...
 --prop_update_updated =
