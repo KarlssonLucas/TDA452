@@ -28,13 +28,12 @@ readNumbers = do
 
 -- Number guessing, game :: IO ()
 
-
 game l h = 
  do putStrLn (show ((l+h)/2))
     n <- getLine
-    if n == "higher" then do n <- game (floor ((l+h)/2)) h 
+    if n == "higher" then do n <- game ((l+h)/2) h 
                              return n
-                     else do ns <- game l ((l+h)/2)
-                             return ns 
+                     else do ns <- game l (((l+h)/2))
+                             return ns
 
 

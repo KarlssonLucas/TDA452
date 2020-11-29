@@ -2,6 +2,7 @@ module Sudoku where
 
 import Test.QuickCheck
 import Data.Char
+import Data.Maybe
 
 ------------------------------------------------------------------------------
 
@@ -49,7 +50,7 @@ isSudoku (Sudoku rows) = (length rows) == 9 && allCellsValid (Sudoku rows)
 
 allCellsValid :: Sudoku -> Bool
 allCellsValid (Sudoku [])     = True 
-allCellsValid (Sudoku (x:xs)) = isValidRow x && allCellsValid (Sudoku xs) && length x == 9
+allCellsValid (Sudoku (x:xs)) = isValidRow x && allCellsValid (Sudoku xs) && length x == 10
 
 isValidRow :: Row -> Bool
 isValidRow []     = True
@@ -102,11 +103,9 @@ readSudoku path = do
 stringToSudoku :: [Row] -> String -> [Row]
 stringToSudoku rows "" = rows
 stringToSudoku (r:rs) (c:cs) 
-        | c == '\n' = r:(stringToSudoku rs cs)
+        | c == '\n' = r:(stringToSudoku rs cs) 
         | c == '.'  = stringToSudoku ((r ++ [Nothing]):rs) cs
         | otherwise = stringToSudoku ((r ++ [(Just (digitToInt c))]):rs) cs
-
-
 
 ------------------------------------------------------------------------------
 
@@ -165,7 +164,8 @@ blocks :: Sudoku -> [Block]
 blocks sudoku = [block sudoku (3*y) (3*x) | y <- [0..2], x <- [0..2]]
 
 prop_blocks_lengths :: Sudoku -> Bool
-prop_blocks_lengths = undefined
+prop_blocks_lengths (Sudoku rows) = length (blocks (Sudoku rows)) == 9 && all (==True) block
+    where block = [length n == 9 | n <- (blocks $ Sudoku rows)]
 
 -- * D3
 
@@ -206,32 +206,75 @@ prop_blanks_allBlanks = length (blanks allBlankSudoku) == 81
 
 -- * E2
 (!!=) :: [a] -> (Int,a) -> [a]
-xs !!= (i,y) = (take (i) xs) ++ [y] ++ (drop (i+1) xs) 
+xs !!= (i,y)    
+        | length xs == 0 = [y]
+        | length xs < i = error "index larger than size of list"
+        | otherwise = (take (i) xs) ++ [y] ++ (drop (i+1) xs) 
 
---prop_bangBangEquals_correct :: [a] -> (Int, a) -> Bool
---prop_bangBangEquals_correct xs (i,y) = (xs !!= (i,y)) ==   ((take (i) xs) ++ [y] ++ (drop (i+1) xs))
+
+prop_bangBangEquals_correct :: (Eq a) => [a] -> (Int, a) -> Bool
+
+prop_bangBangEquals_correct list (int, a) = ((list !!= (modint, a)) !! modint) == a
+    where modint = int `mod` (length list + 1)
 
 
 -- * E3
 
 extractRow :: Sudoku -> Int -> Row
+extractRow (Sudoku (r:[])) _ = r -- not sure if giving last row or error is best
 extractRow (Sudoku (r:rs)) 0 = r
 extractRow (Sudoku (r:rs)) i = extractRow (Sudoku rs) (i-1)  
 
 update :: Sudoku -> Pos -> Cell -> Sudoku 
 update (Sudoku rows) (i,k) y = Sudoku ((take (i) rows) ++ [(extractRow (Sudoku rows) i) !!= (k,y)] ++ (drop (i+1) rows))
 
---prop_update_updated :: ...
---prop_update_updated =
+prop_update_updated :: Sudoku -> Pos -> Cell -> Bool
+prop_update_updated sud (y, x) cell =
+        (extractRow (update sud (yabs, xabs) cell) yabs) !! xabs == cell
+        where yabs = abs y `mod` 9
+              xabs = abs x `mod` 9
+
 
 
 ------------------------------------------------------------------------------
-
+-- gå igenom alla rader alla kolumner
+-- om de är nothing
+-- välj i där i är emellan 1-9
+-- kan vi skapa ett sudoku - ja fortsätt
+-- nej välj ett annat i 
 -- * F1
+solve :: Sudoku -> Maybe Sudoku
+solve sud = undefined
 
+solve1 :: Sudoku -> Int -> Int -> Sudoku
+solve1 (Sudoku (r:rs)) col n | isSudoku (Sudoku (r:rs)) & isOkay (Sudoku (r:rs)) = (Sudoku (r:rs))
+                             | otherwise = solve1 (Sudoku (r:rs)) col+1 n+1
 
--- * F2
+getBlock :: Pos -> Sudoku -> Block
+getBlock (x, y) sud = undefined
 
+possibleCells :: Pos -> Sudoku -> [Int]
+possibleCells pos sud = [n | n <- [1..9], 
+    isSudoku (update sud pos (Just n)),
+    isOkay (update sud pos (Just n))]
+
+selectCell :: [Int] -> (Maybe Int, [Int])
+selectCell [] = (Nothing, [])
+selectCell (x:xs) = ((Just x), xs)
+
+snd' (a, b, c) = b
+lst' (a, b, c) = c
+
+solve :: Sudoku -> Maybe Sudoku
+solve sud = Just $ snd' $ solveHelp ((0, 0), sud, (possibleCells (0, 0) sud))
+
+checkNext :: Pos -> Sudoku -> Bool
+checkNext (8, 8) _ = True
+checkNext pos sud = checkPossible (nextPos pos) sud 
+
+checkPossible :: Maybe Pos -> Sudoku-> Bool
+checkPossible Nothing _ = True
+checkPossible pos sud = (length (possibleCells (fromJust pos) sud)) > 0
 
 -- * F3
 
