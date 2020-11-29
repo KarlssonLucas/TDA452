@@ -244,37 +244,20 @@ prop_update_updated sud (y, x) cell =
 -- nej välj ett annat i 
 -- * F1
 solve :: Sudoku -> Maybe Sudoku
-solve sud = undefined
+solve sud = solve' sud (blanks sud)
 
-solve1 :: Sudoku -> Int -> Int -> Sudoku
-solve1 (Sudoku (r:rs)) col n | isSudoku (Sudoku (r:rs)) & isOkay (Sudoku (r:rs)) = (Sudoku (r:rs))
-                             | otherwise = solve1 (Sudoku (r:rs)) col+1 n+1
+solve' :: Sudoku -> [Pos] -> Maybe Sudoku
+solve' sud [] = Just sud
+solve' sud pos = listToMaybe (catMaybes (sudPossibleCells sud pos))
 
-getBlock :: Pos -> Sudoku -> Block
-getBlock (x, y) sud = undefined
+sudPossibleCells :: Sudoku -> [Pos] -> [Maybe Sudoku]
+sudPossibleCells _ []       = []
+sudPossibleCells sud (p:ps) = [ solve' (update sud p (Just c)) ps | c <- possibleCells p sud]
 
 possibleCells :: Pos -> Sudoku -> [Int]
-possibleCells pos sud = [n | n <- [1..9], 
-    isSudoku (update sud pos (Just n)),
-    isOkay (update sud pos (Just n))]
-
-selectCell :: [Int] -> (Maybe Int, [Int])
-selectCell [] = (Nothing, [])
-selectCell (x:xs) = ((Just x), xs)
-
-snd' (a, b, c) = b
-lst' (a, b, c) = c
-
-solve :: Sudoku -> Maybe Sudoku
-solve sud = Just $ snd' $ solveHelp ((0, 0), sud, (possibleCells (0, 0) sud))
-
-checkNext :: Pos -> Sudoku -> Bool
-checkNext (8, 8) _ = True
-checkNext pos sud = checkPossible (nextPos pos) sud 
-
-checkPossible :: Maybe Pos -> Sudoku-> Bool
-checkPossible Nothing _ = True
-checkPossible pos sud = (length (possibleCells (fromJust pos) sud)) > 0
+possibleCells pos sud = [n | n <- [1..9],
+                        isSudoku (update sud pos (Just n)),
+                        isOkay (update sud pos (Just n))]
 
 -- * F3
 
